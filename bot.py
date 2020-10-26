@@ -2,7 +2,10 @@ import vk_api
 import logging
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.utils import get_random_id
-from settings import TOKEN, GROUP_ID
+try:
+    from settings import TOKEN, GROUP_ID
+except ImportError:
+    exit("You forgot to set token and group id")
 
 log = logging.getLogger('bot')
 
@@ -50,7 +53,7 @@ class Bot:
     def on_event(self, event):
         """
         Обработка события
-        :param event: событие VkBotEvent
+        :param event: VkBotMessageEvent
         """
         if event.type == VkBotEventType.MESSAGE_NEW:
             log.info("Отправляем сообщение назад")
