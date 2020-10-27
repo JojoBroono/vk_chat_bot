@@ -5,7 +5,7 @@ from vk_api.utils import get_random_id
 try:
     from settings import TOKEN, GROUP_ID
 except ImportError:
-    exit("You forgot to set token and group id")
+    exit("You forgot to set token and group id\n DO cp settings.py.default settings.py and set parameters")
 
 log = logging.getLogger('bot')
 
@@ -57,11 +57,11 @@ class Bot:
         """
         if event.type == VkBotEventType.MESSAGE_NEW:
             log.info("Отправляем сообщение назад")
-            msg = event.object.message['text']
+            msg = event.message.text
             self.api.messages.send(
                 random_id=get_random_id(),
                 message=msg,
-                user_id=event.object.message['from_id']
+                user_id=event.message.from_id
             )
         else:
             log.debug(f"Не умею обрабатывать данный тип события {event.type}")
