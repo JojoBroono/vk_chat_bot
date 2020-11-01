@@ -2,6 +2,7 @@ import vk_api
 import logging
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.utils import get_random_id
+from data import INTENTS, SCENARIOS, DEFAULT_ANSWER
 try:
     from settings import TOKEN, GROUP_ID
 except ImportError:
@@ -24,6 +25,13 @@ def config_logging():
     log.setLevel(logging.DEBUG)
 
 
+class UserState:
+    def __init__(self, scenario, step, context):
+        self.scenario = scenario
+        self.step = step
+        self.context = context
+
+
 class Bot:
     """
     echo bot для vk.com
@@ -39,6 +47,7 @@ class Bot:
         self.vk_session = vk_api.VkApi(token=token)
         self.api = self.vk_session.get_api()
         self.long_poll = VkBotLongPoll(self.vk_session, group_id)
+        self.user_states = {}
 
     def run(self):
         """
@@ -55,16 +64,42 @@ class Bot:
         Обработка события
         :param event: VkBotMessageEvent
         """
-        if event.type == VkBotEventType.MESSAGE_NEW:
-            log.info("Отправляем сообщение назад")
-            msg = event.message.text
+
+        if event.type != VkBotEventType.MESSAGE_NEW:
+            log.debug(f"Не умею обрабатывать данный тип события {event.type}")
+            return
+        user_id = event.message.from_id
+        if user_id in self.user_states:
+            # do scenario
+            log.debug(f"User {user_id} is in scenario")
+        else:
+            text = event.message.text
+            # ищем, какой именно intent
+            for intent in INTENTS:
+                if text in intent["tokens"]:
+                    # если сценарий есть - переходим на сценарий
+                    if intent["scenario"]:
+                        self.user_states[user_id] = UserState(
+                            scenario=intent["scenario"],
+                            step=SCENARIOS[intent["scenario"]]["first_step"],
+                            context={}
+                        )
+                    # иначе - пишем ответ
+                    else:
+                        msg = intent["answer"]
+                        self.api.messages.send(
+                            random_id=get_random_id(),
+                            message=msg,
+                            user_id=event.message.from_id
+                        )
+
+                    return
+
             self.api.messages.send(
                 random_id=get_random_id(),
-                message=msg,
+                message=DEFAULT_ANSWER,
                 user_id=event.message.from_id
             )
-        else:
-            log.debug(f"Не умею обрабатывать данный тип события {event.type}")
 
 
 if __name__ == '__main__':
