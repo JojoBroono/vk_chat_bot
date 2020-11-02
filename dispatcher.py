@@ -2,7 +2,7 @@ import collections
 from calendar import monthrange
 from pprint import pprint
 
-from flights import ROUTES, FLIGHTS
+from data import ROUTES, FLIGHTS
 from datetime import timedelta, date
 DAY, WEEK = timedelta(days=1), timedelta(weeks=1)
 

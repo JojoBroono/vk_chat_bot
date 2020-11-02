@@ -40,6 +40,48 @@ SCENARIOS = {
                 "failure_text": None,
                 "handler": None,
                 "next_step": None
+            },
+            "step4": {
+                "text": "Спасибо! Данные записаны",
+                "failure_text": None,
+                "handler": None,
+                "next_step": None
+            },
+            "step5": {
+                "text": "Спасибо! Данные записаны",
+                "failure_text": None,
+                "handler": None,
+                "next_step": None
+            },
+            "step6": {
+                "text": "Спасибо! Данные записаны",
+                "failure_text": None,
+                "handler": None,
+                "next_step": None
+            },
+            "step7": {
+                "text": "Итак, вы ввели следующие данные:\n"
+                        "Город отправления: {from_city}\n"
+                        "Город назначения: {to_city}\n"
+                        "Дата: {date}\n"
+                        "Номер рейса: {flight_number}, отправляется в {flight_time}\n"
+                        "Количество мест: {amount_of_places}\n"
+                        "",
+                "failure_text": None,
+                "handler": None,
+                "next_step": "step8"
+            },
+            "step8": {
+                "text": "Введите номер телефона",
+                "failure_text": "Номер введен неверно. Попробуйте ещё раз",
+                "handler": "phone_number_handler",# TODO handler
+                "next_step": "step9"
+            },
+            "step9": {
+                "text": "Спасибо! С вами свяжутся по номеру {phone_number}",# TODO format
+                "failure_text": None,
+                "handler": None,
+                "next_step": None
             }
         }
     }
