@@ -1,6 +1,6 @@
 ROUTES = {
     'Москва': {
-        'Лондон': ['AB11', 'DC34', 'AC22']
+        'Сыктывкар': ['AB11', 'DC34', 'AC22']
     }
 }
 
@@ -36,39 +36,40 @@ SCENARIOS = {
                 "next_step": "step3"
             },
             "step3": {
-                "text": "Спасибо! Данные записаны",
-                "failure_text": None,
-                "handler": None,
-                "next_step": None
+                "text": "Введите дату в формате dd-mm-yyyy",
+                "failure_text": "Неверный формат. Попробуйте еще раз",
+                "handler": "date_handler",
+                "next_step": "step4"
             },
             "step4": {
-                "text": "Спасибо! Данные записаны",
-                "failure_text": None,
-                "handler": None,
-                "next_step": None
+                "text": "Введите пожалуйста номер подходящего рейса",
+                "failure_text": "Такого номера нет. Введите число от 1 до 5",
+                "handler": "flight_handler", #TODO add
+                "next_step": "step5"
             },
             "step5": {
-                "text": "Спасибо! Данные записаны",
-                "failure_text": None,
-                "handler": None,
-                "next_step": None
+                "text": "Какое количество мест необходимо? Введите число от 1 до 5",
+                "failure_text": "Введите число от 1 до 5",
+                "handler": "places_handler",
+                "next_step": "step7"
             },
-            "step6": {
-                "text": "Спасибо! Данные записаны",
-                "failure_text": None,
-                "handler": None,
-                "next_step": None
-            },
+            # TODO комментарий
+            # "step6": {
+            #     "text": "Спасибо! Данные записаны",
+            #     "failure_text": None,
+            #     "handler": None,
+            #     "next_step": None
+            # },
             "step7": {
                 "text": "Итак, вы ввели следующие данные:\n"
                         "Город отправления: {from_city}\n"
                         "Город назначения: {to_city}\n"
                         "Дата: {date}\n"
-                        "Номер рейса: {flight_number}, отправляется в {flight_time}\n"
+                        # "Номер рейса: {flight_number}, отправляется в {flight_time}\n"
                         "Количество мест: {amount_of_places}\n"
-                        "",
-                "failure_text": None,
-                "handler": None,
+                        "Данные верны? Введите Да/Нет",
+                "failure_text": "Не понятно. Пожалуйста, введите Да или Нет",
+                "handler": "yes_or_no_handler",
                 "next_step": "step8"
             },
             "step8": {
@@ -82,12 +83,18 @@ SCENARIOS = {
                 "failure_text": None,
                 "handler": None,
                 "next_step": None
-            }
+            },
+            # "step_incorrect_data": {
+            #     "text": "Хотите ввести данные заново?",
+            #     "failure_text": None,
+            #     "handler": None,
+            #     "next_step": None
+            # }
         }
     }
 }
 
-DEFAULT_ANSWER = "Не знаю как ответить"
+DEFAULT_ANSWER = "Не понимаю вас."
 
 HELP_ANSWER = "HELP"
 

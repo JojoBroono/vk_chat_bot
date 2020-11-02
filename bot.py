@@ -91,7 +91,7 @@ class Bot:
                         scenario_name = intent["scenario"]
                         first_step_name = SCENARIOS[scenario_name]["first_step"]
                         text_to_send = SCENARIOS[scenario_name]["steps"][first_step_name]['text']
-                        self.user_states[user_id] = UserState(scenario_name, first_step_name, context={})
+                        self.user_states[user_id] = UserState(scenario_name, first_step_name, context={"correct": True})
                     else:
                         log.debug("Just answer")
                         text_to_send = intent["answer"]
@@ -105,13 +105,17 @@ class Bot:
         next_step = steps[step['next_step']]
         text_to_send = next_step['text']
         if handler(text=text, context=state.context):
-            if next_step['next_step']:
+            if not state.context['correct']:
+                state.step_name = "step1"
+                state.context = {"correct": True}
+                text_to_send = steps[state.step_name]['text']
+            elif next_step['next_step']:
                 state.step_name = step['next_step']
             else:
                 self.user_states.pop(user_id)
         else:
             text_to_send = step['failure_text']
-        return text_to_send
+        return text_to_send.format(**state.context)
 
 
 if __name__ == '__main__':
