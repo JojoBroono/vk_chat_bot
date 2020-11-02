@@ -2,7 +2,7 @@ import vk_api
 import logging
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.utils import get_random_id
-from data import INTENTS, SCENARIOS, DEFAULT_ANSWER
+from data import INTENTS, SCENARIOS, DEFAULT_ANSWER, ROUTES
 import handlers
 try:
     from settings import TOKEN, GROUP_ID
@@ -80,22 +80,22 @@ class Bot:
         user_id = event.message.from_id
         text = event.message.text
         if user_id in self.user_states:
-            log.debug(f"User {user_id} is in scenario")
             text_to_send = self.continue_scenario(user_id=user_id, text=text)
         else:
-            log.debug("Intents branch")
             for intent in INTENTS:
                 if text in intent["tokens"]:
                     if intent["scenario"]:
-                        log.debug("Init new scenario")
-                        scenario_name = intent["scenario"]
-                        first_step_name = SCENARIOS[scenario_name]["first_step"]
-                        text_to_send = SCENARIOS[scenario_name]["steps"][first_step_name]['text']
-                        self.user_states[user_id] = UserState(scenario_name, first_step_name, context={"correct": True})
+                        text_to_send = self.start_scenario(user_id, intent)
                     else:
-                        log.debug("Just answer")
                         text_to_send = intent["answer"]
         self._send_msg(user_id=event.message.from_id, msg=text_to_send)
+
+    def start_scenario(self, user_id, intent):
+        scenario_name = intent["scenario"]
+        first_step_name = SCENARIOS[scenario_name]["first_step"]
+        text_to_send = SCENARIOS[scenario_name]["steps"][first_step_name]['text']
+        self.user_states[user_id] = UserState(scenario_name, first_step_name, context={"correct": True})
+        return text_to_send
 
     def continue_scenario(self, user_id, text):
         state = self.user_states[user_id]
@@ -105,7 +105,15 @@ class Bot:
         next_step = steps[step['next_step']]
         text_to_send = next_step['text']
         if handler(text=text, context=state.context):
-            if not state.context['correct']:
+            if 'to_city' in state.context:
+                _from = state.context['from_city']
+                _to = state.context['to_city']
+                flights = ROUTES[_from][_to]
+
+                if not flights:
+                    self.user_states.pop(user_id)
+                    return "Нет сообщения между этими городами"
+            elif not state.context['correct']:
                 state.step_name = "step1"
                 state.context = {"correct": True}
                 text_to_send = steps[state.step_name]['text']
