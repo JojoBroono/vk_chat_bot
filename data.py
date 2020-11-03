@@ -1,12 +1,14 @@
+from datetime import time
+
 ROUTES = {
     'Москва': {
         'Сыктывкар': ['AB11', 'DC34', 'AC22'],
-        'Казань': [],
-        'Киров': []
+        'Казань': ['CD90', 'BA12', 'BA19'],
+        'Киров': ['GH56', 'GH48']
     },
     'Сыктывкар': {
         'Москва': [],
-        'Казать': [],
+        'Казань': [],
         'Киров': []
     },
     'Казань': {
@@ -25,15 +27,43 @@ FLIGHTS = {
     'AB11': {
         'period': 'week',
         'days': (0, 3),
+        'time': time(15, 30)
     },
     'DC34': {
         'period': 'month',
-        'days': (10, 20)
+        'days': (10, 20),
+        'time': time(12, 00)
     },
-    # 'AC22': {
-    #     'period': 'day',
-    #     'days': 0
-    # }
+    'AC22': {
+        'period': 'day',
+        'days': [0],
+        'time': time(10, 15)
+    },
+    'CD90': {
+        'period': 'month',
+        'days': [4, 12, 20, 28],
+        'time': time(15, 30)
+    },
+    'BA12': {
+        'period': 'month',
+        'days': [5, 10, 15, 20],
+        'time': time(2, 00)
+    },
+    'BA19': {
+        'period': 'week',
+        'days': [6],
+        'time': time(6, 00)
+    },
+    'GH56': {
+        'period': 'day',
+        'days': [0],
+        'time': time(11, 20)
+    },
+    'GH48': {
+        'period': 'week',
+        'days': [2],
+        'time': time(15, 00)
+    },
 }
 
 SCENARIOS = {
@@ -43,13 +73,13 @@ SCENARIOS = {
             "step1": {
                 "text": "Введите город отправления",
                 "failure_text": "Город введен неправильно. Попробуйте ещё раз",
-                "handler": "city_handler",
+                "handler": "from_city_handler",
                 "next_step": "step2"
             },
             "step2": {
                 "text": "Введите город прибытия",
                 "failure_text": "Город введен неправильно. Попробуйте ещё раз",
-                "handler": "city_handler",
+                "handler": "to_city_handler",
                 "next_step": "step3"
             },
             "step3": {
@@ -59,7 +89,8 @@ SCENARIOS = {
                 "next_step": "step4"
             },
             "step4": {
-                "text": "Введите пожалуйста номер подходящего рейса",
+                "text": "Вот список ближайших рейсов: {flights}\n"
+                        "Введите пожалуйста номер подходящего рейса",
                 "failure_text": "Такого номера нет. Введите число от 1 до 5",
                 "handler": "flight_handler", #TODO add
                 "next_step": "step5"
@@ -86,7 +117,7 @@ SCENARIOS = {
                         "Количество мест: {amount_of_places}\n"
                         "Данные верны? Введите Да/Нет",
                 "failure_text": "Не понятно. Пожалуйста, введите Да или Нет",
-                "handler": "yes_or_no_handler",
+                "handler": "right_data_handler",
                 "next_step": "step8"
             },
             "step8": {

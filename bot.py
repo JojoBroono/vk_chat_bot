@@ -4,6 +4,8 @@ from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.utils import get_random_id
 from data import INTENTS, SCENARIOS, DEFAULT_ANSWER, ROUTES
 import handlers
+from dispatcher import dispatcher
+from datetime import datetime
 try:
     from settings import TOKEN, GROUP_ID
 except ImportError:
@@ -104,25 +106,23 @@ class Bot:
         handler = getattr(handlers, step['handler'])
         next_step = steps[step['next_step']]
         text_to_send = next_step['text']
-        if handler(text=text, context=state.context):
-            if 'to_city' in state.context:
-                _from = state.context['from_city']
-                _to = state.context['to_city']
-                flights = ROUTES[_from][_to]
-
-                if not flights:
-                    self.user_states.pop(user_id)
-                    return "Нет сообщения между этими городами"
-            elif not state.context['correct']:
-                state.step_name = "step1"
-                state.context = {"correct": True}
-                text_to_send = steps[state.step_name]['text']
-            elif next_step['next_step']:
+        correct_input, msg = handler(text=text, context=state.context)
+        if correct_input:
+            if next_step['next_step']:
                 state.step_name = step['next_step']
             else:
                 self.user_states.pop(user_id)
         else:
-            text_to_send = step['failure_text']
+            if not msg:
+                text_to_send = step['failure_text']
+            elif msg == 'Нет сообщения между городами':
+                text_to_send = msg
+                self.user_states.pop(user_id)
+            elif msg == 'Неверные данные':
+                self.user_states.pop(user_id)
+                text_to_send = 'Прекращаю работу. Можете попробовать заново.'
+            else:
+                text_to_send = msg
         return text_to_send.format(**state.context)
 
 

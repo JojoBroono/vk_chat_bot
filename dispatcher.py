@@ -16,13 +16,17 @@ def get_week_schedule(from_city, to_city, start_date):
             continue
         if val['period'] == 'week':
             for day_number in val['days']:
-                date = next_week_day(start_date, day_number)
-                result[date].append(key)
+                _date = next_week_day(start_date, day_number)
+                result[_date].append(key)
         elif val['period'] == 'month':
             for day_number in val['days']:
-                date = next_month_day(start_date, day_number)
-                if date < start_date + WEEK:
-                    result[date].append(key)
+                _date = next_month_day(start_date, day_number)
+                if _date < start_date + WEEK:
+                    result[_date].append(key)
+        elif val['period'] == 'day':
+            for i in range(7):
+                _date = start_date + i * DAY
+                result[_date].append(key)
     return result
 
 
@@ -38,16 +42,16 @@ def next_month_day(start_date, day_number):
 
 def dispatcher(from_city, to_city, departure_date):
     flights = []
-    date = departure_date
+    _date = departure_date
     while True:
-        schedule = get_week_schedule(from_city, to_city, date)
+        schedule = get_week_schedule(from_city, to_city, _date)
         for i in range(7):
-            for flight in schedule[date]:
-                flights.append((flight, date.isoformat()))
-                if len(flights) == 10:
+            for flight in schedule[_date]:
+                flights.append((flight, _date.isoformat()))
+                if len(flights) == 5:
                     return flights
-            date += DAY
-        if date - departure_date == timedelta(days=365):
+            _date += DAY
+        if _date - departure_date == timedelta(days=365):
             return flights
 
 
