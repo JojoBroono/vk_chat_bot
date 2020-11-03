@@ -7,32 +7,34 @@ city_re = re.compile(r'москв|сыктывкар|киров|казан')
 phone_number_re = re.compile(r'^((8|\+7)[\- ]?)?(\(?\d{3}\)?[\- ]?)?[\d\- ]{7,10}$')
 
 
-def city_handler(text, context):
-    match = re.match(city_re, text.lower())
-    if not match:
-        return False
-    if 'from_city' in context:
-        context['to_city'] = text
+def normalize_city(text):
+    if re.match(r'москв', text.lower()):
+        return 'Москва'
+    elif re.match(r'сыктывкар', text.lower()):
+        return 'Сыктывкар'
+    elif re.match(r'киров', text.lower()):
+        return 'Киров'
+    elif re.match(r'казан', text.lower()):
+        return 'Казань'
     else:
-        context['from_city'] = text
-    return True
+        return ''
 
 
 def from_city_handler(text, context):
-    match = re.match(city_re, text.lower())
-    if not match:
+    city = normalize_city(text)
+    if not city:
         return False, ''
-    context['from_city'] = text
+    context['from_city'] = city
     return True, ''
 
 
 def to_city_handler(text, context):
-    match = re.match(city_re, text.lower())
-    if not match:
+    city = normalize_city(text)
+    if not city:
         return False, ''
-    if not ROUTES[context['from_city']][text]:
+    if not ROUTES[context['from_city']][city]:
         return False, 'Нет сообщения между городами',
-    context['to_city'] = text
+    context['to_city'] = city
     return True, ''
 
 
@@ -48,6 +50,11 @@ def date_handler(text, context):
 
         flights = dispatcher(context['from_city'], context['to_city'], d)
         context['flights'] = flights
+        context['flights_output'] = '\n'
+        for i, flight in enumerate(flights):
+            num = flight[0]
+            date = datetime.datetime.strftime(flight[1], _format)
+            context['flights_output'] += f'{i}) {num} : {date} \n'
         return True, ''
     except ValueError:
         return False, 'Неверный формат даты'
@@ -55,7 +62,10 @@ def date_handler(text, context):
 
 def flight_handler(text, context):
     if '1' <= text <= '5':
-        context['flight_number'] = text
+        number = int(text)
+        context['flight_number'] = context['flights'][number][0]
+        flight_time = FLIGHTS[context['flight_number']]['time']
+        context['flight_time'] = datetime.time.strftime(flight_time, '%H:%M')
         return True, ''
     else:
         return False, ''

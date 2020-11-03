@@ -47,7 +47,7 @@ def dispatcher(from_city, to_city, departure_date):
         schedule = get_week_schedule(from_city, to_city, _date)
         for i in range(7):
             for flight in schedule[_date]:
-                flights.append((flight, _date.isoformat()))
+                flights.append((flight, _date))
                 if len(flights) == 5:
                     return flights
             _date += DAY

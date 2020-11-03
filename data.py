@@ -89,7 +89,7 @@ SCENARIOS = {
                 "next_step": "step4"
             },
             "step4": {
-                "text": "Вот список ближайших рейсов: {flights}\n"
+                "text": "Вот список ближайших рейсов: {flights_output}\n"
                         "Введите пожалуйста номер подходящего рейса",
                 "failure_text": "Такого номера нет. Введите число от 1 до 5",
                 "handler": "flight_handler", #TODO add
@@ -113,7 +113,7 @@ SCENARIOS = {
                         "Город отправления: {from_city}\n"
                         "Город назначения: {to_city}\n"
                         "Дата: {date}\n"
-                        # "Номер рейса: {flight_number}, отправляется в {flight_time}\n"
+                        "Номер рейса: {flight_number}, отправляется в {flight_time}\n"
                         "Количество мест: {amount_of_places}\n"
                         "Данные верны? Введите Да/Нет",
                 "failure_text": "Не понятно. Пожалуйста, введите Да или Нет",

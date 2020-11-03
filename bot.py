@@ -2,10 +2,9 @@ import vk_api
 import logging
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.utils import get_random_id
-from data import INTENTS, SCENARIOS, DEFAULT_ANSWER, ROUTES
+from data import INTENTS, SCENARIOS, DEFAULT_ANSWER
 import handlers
-from dispatcher import dispatcher
-from datetime import datetime
+
 try:
     from settings import TOKEN, GROUP_ID
 except ImportError:
@@ -115,7 +114,7 @@ class Bot:
         else:
             if not msg:
                 text_to_send = step['failure_text']
-            elif msg == 'Нет сообщения между городами':
+            elif msg == 'Нет сообщения между этими городами':
                 text_to_send = msg
                 self.user_states.pop(user_id)
             elif msg == 'Неверные данные':
