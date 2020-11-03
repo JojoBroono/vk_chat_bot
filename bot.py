@@ -2,7 +2,7 @@ import vk_api
 import logging
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.utils import get_random_id
-from data import INTENTS, SCENARIOS, DEFAULT_ANSWER
+from data import INTENTS, SCENARIOS, DEFAULT_ANSWER, HELP_ANSWER
 import handlers
 
 try:
@@ -33,6 +33,10 @@ class UserState:
         self.step_name = step
         self.context = context
 
+
+# TODO текст для /help
+# TODO нумерация массива
+# TODO тестовое покрытие
 
 class Bot:
     """
@@ -80,19 +84,25 @@ class Bot:
         text_to_send = DEFAULT_ANSWER
         user_id = event.message.from_id
         text = event.message.text
+        if text == '/ticket':
+            text_to_send = self.start_scenario(user_id, "ticket")
+            self._send_msg(user_id, text_to_send)
+            return
+        if text == '/help':
+            self._send_msg(user_id, HELP_ANSWER)
+            return
         if user_id in self.user_states:
             text_to_send = self.continue_scenario(user_id=user_id, text=text)
         else:
             for intent in INTENTS:
                 if text in intent["tokens"]:
                     if intent["scenario"]:
-                        text_to_send = self.start_scenario(user_id, intent)
+                        text_to_send = self.start_scenario(user_id, intent["scenario"])
                     else:
                         text_to_send = intent["answer"]
         self._send_msg(user_id=event.message.from_id, msg=text_to_send)
 
-    def start_scenario(self, user_id, intent):
-        scenario_name = intent["scenario"]
+    def start_scenario(self, user_id, scenario_name):
         first_step_name = SCENARIOS[scenario_name]["first_step"]
         text_to_send = SCENARIOS[scenario_name]["steps"][first_step_name]['text']
         self.user_states[user_id] = UserState(scenario_name, first_step_name, context={"correct": True})
@@ -118,8 +128,11 @@ class Bot:
                 text_to_send = msg
                 self.user_states.pop(user_id)
             elif msg == 'Неверные данные':
+                text_to_send = steps["start_again"]['text']
+                state.step_name = "start_again"
+            elif msg == 'Не начинать заново':
                 self.user_states.pop(user_id)
-                text_to_send = 'Прекращаю работу. Можете попробовать заново.'
+                text_to_send = 'Одобрено'
             else:
                 text_to_send = msg
         return text_to_send.format(**state.context)

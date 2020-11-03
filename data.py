@@ -99,15 +99,14 @@ SCENARIOS = {
                 "text": "Какое количество мест необходимо? Введите число от 1 до 5",
                 "failure_text": "Введите число от 1 до 5",
                 "handler": "places_handler",
+                "next_step": "step6"
+            },
+            "step6": {
+                "text": "Вы можете оставить комментарий в произвольной форме. Если не хотите, введите любой текст",
+                "failure_text": None,
+                "handler": "comment_handler",
                 "next_step": "step7"
             },
-            # TODO комментарий
-            # "step6": {
-            #     "text": "Спасибо! Данные записаны",
-            #     "failure_text": None,
-            #     "handler": None,
-            #     "next_step": None
-            # },
             "step7": {
                 "text": "Итак, вы ввели следующие данные:\n"
                         "Город отправления: {from_city}\n"
@@ -132,12 +131,12 @@ SCENARIOS = {
                 "handler": None,
                 "next_step": None
             },
-            # "step_incorrect_data": {
-            #     "text": "Хотите ввести данные заново?",
-            #     "failure_text": None,
-            #     "handler": None,
-            #     "next_step": None
-            # }
+            "start_again": {
+                "text": "Хотите ввести данные заново?",
+                "failure_text": "Не понятно. Пожалуйста, введите Да или Нет",
+                "handler": "start_again_handler",
+                "next_step": "step1"
+            }
         }
     }
 }

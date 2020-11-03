@@ -96,6 +96,20 @@ def phone_number_handler(text, context):
     return True, ''
 
 
+def start_again_handler(text, context):
+    if text.lower() == 'да':
+        return True, ''
+    elif text.lower() == 'нет':
+        return False, 'Не начинать заново'
+    else:
+        return False, ''
+
+
+def comment_handler(text, context):
+    context['comment'] = text
+    return True, ''
+
+
 if __name__ == '__main__':
     print(flight_handler('2', {}))
     print(flight_handler('8', {}))
