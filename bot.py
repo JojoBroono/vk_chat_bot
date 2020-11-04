@@ -61,7 +61,7 @@ class Bot:
             except Exception:
                 log.exception("Поймано исключение при обработке события")
 
-    def _send_msg(self, user_id, msg):
+    def send_msg(self, user_id, msg):
         self.api.messages.send(
             random_id=get_random_id(),
             message=msg,
@@ -82,11 +82,11 @@ class Bot:
         text = event.message.text
         if text == '/ticket':
             text_to_send = self.start_scenario(user_id, "ticket")
-            self._send_msg(user_id, text_to_send)
+            self.send_msg(user_id=user_id, msg=text_to_send)
             return
         if text == '/help':
             self.user_states.pop(user_id)
-            self._send_msg(user_id, HELP_ANSWER)
+            self.send_msg(user_id=user_id, msg=HELP_ANSWER)
             return
         if user_id in self.user_states:
             text_to_send = self.continue_scenario(user_id=user_id, text=text)
@@ -97,7 +97,7 @@ class Bot:
                         text_to_send = self.start_scenario(user_id, intent["scenario"])
                     else:
                         text_to_send = intent["answer"]
-        self._send_msg(user_id=event.message.from_id, msg=text_to_send)
+        self.send_msg(user_id=event.message.from_id, msg=text_to_send)
 
     def start_scenario(self, user_id, scenario_name):
         first_step_name = SCENARIOS[scenario_name]["first_step"]
