@@ -1,9 +1,10 @@
+from pprint import pprint
 from unittest import TestCase
 from bot import Bot
 from unittest.mock import patch, Mock, ANY
 from vk_api.bot_longpoll import VkBotMessageEvent
-from datetime import datetime, timedelta
-from data import SCENARIOS
+from datetime import datetime, timedelta, time
+from data import SCENARIOS, FLIGHTS
 from copy import deepcopy
 
 RAW = {'type': 'message_new', 'object': {
@@ -33,31 +34,11 @@ class TestNormal(TestCase):
                 bot.on_event.assert_any_call({})
                 assert bot.on_event.call_count == call_count
 
-    # def test_on_event(self):
-    #     event = VkBotMessageEvent(raw=self.RAW)
-    #
-    #     send_mock = Mock()
-    #
-    #     with patch('bot.vk_api.VkApi'):
-    #         with patch('bot.VkBotLongPoll'):
-    #             bot = Bot('', '')
-    #             bot.api.messages.send = send_mock
-    #
-    #             bot.on_event(event)
-    #
-    #     send_mock.assert_called_once_with(
-    #         random_id=ANY,
-    #         message=self.RAW['object']['message']['text'],
-    #         user_id=self.RAW['object']['message']['from_id']
-    #     )
-
-    tomorrow = datetime.now() + timedelta(days=1)
-    tomorrow_str = tomorrow.strftime('%d-%m-%Y')
     INPUTS = [
         '/ticket',
         'Москва',
         'Сыктывкар',
-        tomorrow_str,
+        '30-01-2021',
         '1',
         '1',
         'БАБАБУЙ',
@@ -65,16 +46,19 @@ class TestNormal(TestCase):
         '89043679578'
     ]
     steps = SCENARIOS['ticket']['steps']
+
+    PHONE_NUMBER = {'phone_number': '89043679578'}
+
     EXPECTED_OUTPUTS = [
         steps['step1']['text'],
         steps['step2']['text'],
         steps['step3']['text'],
-        ANY,
+        steps['step4']['text'],
         steps['step5']['text'],
         steps['step6']['text'],
-        ANY,
+        steps['step7']['text'],
         steps['step8']['text'],
-        ANY
+        steps['step9']['text'].format(**PHONE_NUMBER)
 
     ]
 
@@ -84,7 +68,7 @@ class TestNormal(TestCase):
         long_poller_listen_mock.listen = Mock(return_value=events)
 
         send_mock = Mock()
-
+        user_id = RAW['object']['message']['from_id']
         for text in self.INPUTS:
             raw_cpy = deepcopy(RAW)
             raw_cpy['object']['message']['text'] = text
@@ -94,14 +78,52 @@ class TestNormal(TestCase):
         with patch('bot.vk_api.VkApi'):
             with patch('bot.VkBotLongPoll', return_value=long_poller_listen_mock):
                 bot = Bot('', '')
+                self.context = {}
                 bot.send_msg = send_mock
-                bot.run()
+                for event in bot.long_poll.listen():
+                    try:
+                        bot.on_event(event)
+                        self.context.update(bot.user_states[user_id].context)
+                    except Exception as exc:
+                        print(exc)
 
+        expected_outputs_formatted = []
+
+        for st in self.EXPECTED_OUTPUTS:
+            expected_outputs_formatted.append(st.format(**self.context))
         real_outputs = []
         for call in send_mock.call_args_list:
             args, kwargs = call
             real_outputs.append(kwargs['msg'])
-        print(real_outputs)
-        print(self.EXPECTED_OUTPUTS)
-        assert real_outputs == self.EXPECTED_OUTPUTS
+        assert real_outputs == expected_outputs_formatted
 
+
+class TestNonlinear(TestCase):
+    INPUTS = [
+        '/ticket',
+        'Москва',
+        'Казань',
+        'Бабабуй',
+        '/ticket',
+        'Москва',
+        'Сыктывкар',
+        '30-01-2021',
+        '1',
+        '1',
+        'БАБАБУЙ',
+        'Нет',
+        'Да'
+    ]
+    steps = SCENARIOS['ticket']['steps']
+    EXPECTED_OUTPUTS = [
+        steps['step1']['text'],
+        steps['step2']['text'],
+        'Нет сообщения между городами',
+        steps['step1']['text'],
+        steps['step2']['text'],
+        steps['step3']['text'],
+        steps['step4']['text'],
+        steps['step5']['text'],
+        steps['step6']['text'],
+
+    ]
