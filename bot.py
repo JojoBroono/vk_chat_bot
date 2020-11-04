@@ -34,10 +34,6 @@ class UserState:
         self.context = context
 
 
-# TODO текст для /help
-# TODO нумерация массива
-# TODO тестовое покрытие
-
 class Bot:
     """
     echo bot для vk.com
@@ -89,6 +85,7 @@ class Bot:
             self._send_msg(user_id, text_to_send)
             return
         if text == '/help':
+            self.user_states.pop(user_id)
             self._send_msg(user_id, HELP_ANSWER)
             return
         if user_id in self.user_states:
