@@ -92,7 +92,7 @@ SCENARIOS = {
                 "text": "Вот список ближайших рейсов: {flights_output}\n"
                         "Введите пожалуйста номер подходящего рейса",
                 "failure_text": "Такого номера нет. Введите число от 1 до 5",
-                "handler": "flight_handler", #TODO add
+                "handler": "flight_handler",
                 "next_step": "step5"
             },
             "step5": {
@@ -122,11 +122,11 @@ SCENARIOS = {
             "step8": {
                 "text": "Введите номер телефона",
                 "failure_text": "Номер введен неверно. Попробуйте ещё раз",
-                "handler": "phone_number_handler",# TODO handler
+                "handler": "phone_number_handler",
                 "next_step": "step9"
             },
             "step9": {
-                "text": "Спасибо! С вами свяжутся по номеру {phone_number}",# TODO format
+                "text": "Спасибо! С вами свяжутся по номеру {phone_number}",
                 "failure_text": None,
                 "handler": None,
                 "next_step": None

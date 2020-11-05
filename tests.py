@@ -101,9 +101,8 @@ class TestNormal(TestCase):
 class TestNonlinear(TestCase):
     INPUTS = [
         '/ticket',
-        'Москва',
         'Казань',
-        'Бабабуй',
+        'Киров',
         '/ticket',
         'Москва',
         'Сыктывкар',
@@ -125,5 +124,44 @@ class TestNonlinear(TestCase):
         steps['step4']['text'],
         steps['step5']['text'],
         steps['step6']['text'],
-
+        steps['step7']['text'],
+        steps['start_again']['text'],
+        steps['step1']['text']
     ]
+
+    def test_nonlinear(self):
+        events = []
+        long_poller_listen_mock = Mock()
+        long_poller_listen_mock.listen = Mock(return_value=events)
+
+        send_mock = Mock()
+        user_id = RAW['object']['message']['from_id']
+        for text in self.INPUTS:
+            raw_cpy = deepcopy(RAW)
+            raw_cpy['object']['message']['text'] = text
+            event = VkBotMessageEvent(raw=raw_cpy)
+            events.append(event)
+
+        with patch('bot.vk_api.VkApi'):
+            with patch('bot.VkBotLongPoll', return_value=long_poller_listen_mock):
+                bot = Bot('', '')
+                self.context = {}
+                bot.send_msg = send_mock
+                for event in bot.long_poll.listen():
+                    try:
+                        bot.on_event(event)
+                        self.context.update(bot.user_states[user_id].context)
+                    except Exception as exc:
+                        print(exc)
+
+        expected_outputs_formatted = []
+
+        for st in self.EXPECTED_OUTPUTS:
+            expected_outputs_formatted.append(st.format(**self.context))
+        real_outputs = []
+        for call in send_mock.call_args_list:
+            args, kwargs = call
+            real_outputs.append(kwargs['msg'])
+
+        assert real_outputs == expected_outputs_formatted
+
