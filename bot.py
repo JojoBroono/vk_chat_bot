@@ -85,8 +85,9 @@ class Bot:
             self.send_msg(user_id=user_id, msg=text_to_send)
             return
         if text == '/help':
-            self.user_states.pop(user_id)
             self.send_msg(user_id=user_id, msg=HELP_ANSWER)
+            if user_id in self.user_states:
+                self.user_states.pop(user_id)
             return
         if user_id in self.user_states:
             text_to_send = self.continue_scenario(user_id=user_id, text=text)
