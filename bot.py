@@ -1,9 +1,12 @@
 import vk_api
 import logging
+
+from pony.orm import db_session
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.utils import get_random_id
 from settings import INTENTS, SCENARIOS, DEFAULT_ANSWER, HELP_ANSWER
 import handlers
+from models import UserState
 
 try:
     from settings import TOKEN, GROUP_ID
@@ -27,13 +30,6 @@ def config_logging():
     log.setLevel(logging.DEBUG)
 
 
-class UserState:
-    def __init__(self, scenario, step, context):
-        self.scenario_name = scenario
-        self.step_name = step
-        self.context = context
-
-
 class Bot:
     """
     echo bot для vk.com
@@ -49,7 +45,6 @@ class Bot:
         self.vk_session = vk_api.VkApi(token=token)
         self.api = self.vk_session.get_api()
         self.long_poll = VkBotLongPoll(self.vk_session, group_id)
-        self.user_states = {}
 
     def run(self):
         """
@@ -68,6 +63,7 @@ class Bot:
             user_id=user_id
         )
 
+    @db_session
     def on_event(self, event):
         """
         Обработка события
@@ -75,22 +71,25 @@ class Bot:
         """
 
         if event.type != VkBotEventType.MESSAGE_NEW:
-            log.debug(f"Не умею обрабатывать данный тип события {event.type}")
+            # log.debug(f"Не умею обрабатывать данный тип события {event.type}")
             return
         text_to_send = DEFAULT_ANSWER
         user_id = event.message.from_id
         text = event.message.text
+        state = UserState.get(user_id=str(user_id))
         if text == '/ticket':
+            if state is not None:
+                state.delete()
             text_to_send = self.start_scenario(user_id, "ticket")
             self.send_msg(user_id=user_id, msg=text_to_send)
             return
         if text == '/help':
             self.send_msg(user_id=user_id, msg=HELP_ANSWER)
-            if user_id in self.user_states:
-                self.user_states.pop(user_id)
+            if state is not None:
+                state.delete()
             return
-        if user_id in self.user_states:
-            text_to_send = self.continue_scenario(user_id=user_id, text=text)
+        if state is not None:
+            text_to_send = self.continue_scenario(state=state, text=text)
         else:
             for intent in INTENTS:
                 if text in intent["tokens"]:
@@ -103,11 +102,10 @@ class Bot:
     def start_scenario(self, user_id, scenario_name):
         first_step_name = SCENARIOS[scenario_name]["first_step"]
         text_to_send = SCENARIOS[scenario_name]["steps"][first_step_name]['text']
-        self.user_states[user_id] = UserState(scenario_name, first_step_name, context={"correct": True})
+        UserState(user_id=str(user_id), scenario_name=scenario_name, step_name=first_step_name, context={})
         return text_to_send
 
-    def continue_scenario(self, user_id, text):
-        state = self.user_states[user_id]
+    def continue_scenario(self, state, text):
         steps = SCENARIOS[state.scenario_name]['steps']
         step = steps[state.step_name]
         handler = getattr(handlers, step['handler'])
@@ -118,18 +116,18 @@ class Bot:
             if next_step['next_step']:
                 state.step_name = step['next_step']
             else:
-                self.user_states.pop(user_id)
+                state.delete()
         else:
             if not msg:
                 text_to_send = step['failure_text']
             elif msg == 'Нет сообщения между этими городами':
                 text_to_send = msg
-                self.user_states.pop(user_id)
+                state.delete()
             elif msg == 'Неверные данные':
                 text_to_send = steps["start_again"]['text']
                 state.step_name = "start_again"
             elif msg == 'Не начинать заново':
-                self.user_states.pop(user_id)
+                state.delete()
                 text_to_send = 'Одобрено'
             else:
                 text_to_send = msg

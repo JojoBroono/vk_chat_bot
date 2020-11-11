@@ -52,10 +52,10 @@ def date_handler(text, context):
         context['flights_output'] = '\n'
         for i, flight in enumerate(flights):
             num = flight[0]
-            date = datetime.datetime.strftime(flight[1], _format)
+            date = flight[1]
             flight_time = FLIGHTS[num]['time']
-            context['flight_time'] = datetime.time.strftime(flight_time, '%H:%M')
-            context['flights_output'] += f"{i + 1}) {num} : {date} {context['flight_time']}\n"
+            flight_time_str = datetime.time.strftime(flight_time, '%H:%M')
+            context['flights_output'] += f"{i + 1}) {num} : {date} {flight_time_str}\n"
         return True, ''
     except ValueError:
         return False, 'Неверный формат даты'
@@ -65,6 +65,8 @@ def flight_handler(text, context):
     if '1' <= text <= '5':
         number = int(text) - 1
         context['flight_number'] = context['flights'][number][0]
+        flight_time = FLIGHTS[context['flight_number']]['time']
+        context['flight_time'] = datetime.time.strftime(flight_time, '%H:%M')
         return True, ''
     else:
         return False, ''
