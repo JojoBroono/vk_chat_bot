@@ -4,7 +4,7 @@ from bot import Bot
 from unittest.mock import patch, Mock, ANY
 from vk_api.bot_longpoll import VkBotMessageEvent
 from datetime import datetime, timedelta, time
-from data import SCENARIOS, FLIGHTS
+from settings import SCENARIOS, FLIGHTS
 from copy import deepcopy
 
 RAW = {'type': 'message_new', 'object': {

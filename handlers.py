@@ -1,6 +1,6 @@
 import re
 import datetime
-from data import FLIGHTS, ROUTES
+from settings import FLIGHTS, ROUTES
 from dispatcher import dispatcher
 
 phone_number_re = re.compile(r'^((8|\+7)[\- ]?)?(\(?\d{3}\)?[\- ]?)?[\d\- ]{7,10}$')

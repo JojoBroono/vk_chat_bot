@@ -2,7 +2,7 @@ import vk_api
 import logging
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.utils import get_random_id
-from data import INTENTS, SCENARIOS, DEFAULT_ANSWER, HELP_ANSWER
+from settings import INTENTS, SCENARIOS, DEFAULT_ANSWER, HELP_ANSWER
 import handlers
 
 try:
