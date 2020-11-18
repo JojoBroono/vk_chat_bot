@@ -9,6 +9,7 @@ import handlers
 from models import UserState
 import requests
 import json
+from image_maker import ImageMaker
 
 try:
     from settings import TOKEN, GROUP_ID
@@ -65,10 +66,15 @@ class Bot:
             user_id=user_id
         )
 
-    def send_img(self, user_id, image_name):
-        image = open(image_name, 'rb')
+    def get_photo_and_name(self, user_id, context):
+        response = self.api.users.get(user_ids=user_id, fields=['photo_100'])
+        context['first_name'] = response[0]['first_name']
+        context['last_name'] = response[0]['last_name']
+        context['photo_url'] = response[0]['photo_100']
+
+    def send_img(self, user_id, image):
         upload_url = self.api.photos.getMessagesUploadServer()['upload_url']
-        response = requests.post(url=upload_url, files={"photo": ('postcard.jpg', image, 'image/jpg')})
+        response = requests.post(url=upload_url, files={"photo": ('template.png', image, 'image/png')})
 
         content = json.loads(response.content)
         photo_data = self.api.photos.saveMessagesPhoto(server=content['server'],
@@ -101,10 +107,9 @@ class Bot:
             self.send_msg(user_id=user_id, msg=text_to_send)
             return
         if text == '/help':
-            self.send_img(user_id, "postcard.jpg")
-            # self.send_msg(user_id=user_id, msg=HELP_ANSWER)
-            # if state is not None:
-            #     state.delete()
+            self.send_msg(user_id=user_id, msg=HELP_ANSWER)
+            if state is not None:
+                state.delete()
             return
         if state is not None:
             text_to_send = self.continue_scenario(state=state, text=text)
@@ -115,9 +120,12 @@ class Bot:
                         text_to_send = self.start_scenario(user_id, intent["scenario"])
                     else:
                         text_to_send = intent["answer"]
-        # step = SCENARIOS[state.scenario_name]['steps'][state.step_name]
-        # if "image" in step:
-        #     self.send_img(step['image'])
+        step = SCENARIOS[state.scenario_name]['steps'][state.step_name]
+        if "image" in step:
+            im = ImageMaker('external_data/template.png')
+            self.get_photo_and_name(user_id, state.context)
+            postcard = im.draw_postcard(state.context)
+            self.send_img(user_id=user_id, image=postcard)
         self.send_msg(user_id=event.message.from_id, msg=text_to_send)
 
     def start_scenario(self, user_id, scenario_name):

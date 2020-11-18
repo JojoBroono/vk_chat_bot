@@ -32,7 +32,12 @@ class ImageMaker:
         photo = Image.open(io.BytesIO(requests.get(context["photo_url"]).content))
 
         self.image.paste(im=photo, box=(20, 20, 120, 120))
-        self.image.show()
+
+        temp_file = io.BytesIO()
+        self.image.save(temp_file, 'png')
+        temp_file.seek(0)
+
+        return temp_file
 
 
 if __name__ == '__main__':
