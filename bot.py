@@ -7,6 +7,8 @@ from vk_api.utils import get_random_id
 from settings import INTENTS, SCENARIOS, DEFAULT_ANSWER, HELP_ANSWER
 import handlers
 from models import UserState
+import requests
+import json
 
 try:
     from settings import TOKEN, GROUP_ID
@@ -63,6 +65,21 @@ class Bot:
             user_id=user_id
         )
 
+    def send_img(self, user_id, image_name):
+        image = open(image_name, 'rb')
+        upload_url = self.api.photos.getMessagesUploadServer()['upload_url']
+        response = requests.post(url=upload_url, files={"photo": ('postcard.jpg', image, 'image/jpg')})
+
+        content = json.loads(response.content)
+        photo_data = self.api.photos.saveMessagesPhoto(server=content['server'],
+                                                       photo=content['photo'], hash=content['hash'])
+        attach = f"photo{photo_data[0]['owner_id']}_{photo_data[0]['id']}"
+        self.api.messages.send(
+            random_id=get_random_id(),
+            attachment=attach,
+            user_id=user_id
+        )
+
     @db_session
     def on_event(self, event):
         """
@@ -84,9 +101,10 @@ class Bot:
             self.send_msg(user_id=user_id, msg=text_to_send)
             return
         if text == '/help':
-            self.send_msg(user_id=user_id, msg=HELP_ANSWER)
-            if state is not None:
-                state.delete()
+            self.send_img(user_id, "postcard.jpg")
+            # self.send_msg(user_id=user_id, msg=HELP_ANSWER)
+            # if state is not None:
+            #     state.delete()
             return
         if state is not None:
             text_to_send = self.continue_scenario(state=state, text=text)
@@ -97,6 +115,9 @@ class Bot:
                         text_to_send = self.start_scenario(user_id, intent["scenario"])
                     else:
                         text_to_send = intent["answer"]
+        # step = SCENARIOS[state.scenario_name]['steps'][state.step_name]
+        # if "image" in step:
+        #     self.send_img(step['image'])
         self.send_msg(user_id=event.message.from_id, msg=text_to_send)
 
     def start_scenario(self, user_id, scenario_name):
