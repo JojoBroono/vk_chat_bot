@@ -127,14 +127,17 @@ SCENARIOS = {
                         "Данные верны? Введите Да/Нет",
                 "failure_text": "Не понятно. Пожалуйста, введите Да или Нет",
                 "handler": "right_data_handler",
-                "next_step": "step8"
+                "next_step": "step8",
+
             },
             "step8": {
-                "text": "Введите номер телефона",
+                "text": "Ваш билет.\nВведите номер телефона",
                 "failure_text": "Номер введен неверно. Попробуйте ещё раз",
                 "handler": "phone_number_handler",
-                "next_step": "step9"
+                "next_step": "step9",
+                "image": True
             },
+
             "step9": {
                 "text": "Спасибо! С вами свяжутся по номеру {phone_number}",
                 "failure_text": None,
@@ -151,7 +154,7 @@ SCENARIOS = {
     }
 }
 
-DEFAULT_ANSWER = "Не понимаю вас."
+DEFAULT_ANSWER = "Не понимаю вас.\n Введите /help для справки"
 
 HELP_ANSWER = "Привет! Я бот для заказа билета на самолет.\n"\
                 "Команда /ticket запустит заказ билета\n" \

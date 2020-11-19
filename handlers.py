@@ -65,6 +65,7 @@ def flight_handler(text, context):
     if '1' <= text <= '5':
         number = int(text) - 1
         context['flight_number'] = context['flights'][number][0]
+        context['date'] = context['flights'][number][1]
         flight_time = FLIGHTS[context['flight_number']]['time']
         context['flight_time'] = datetime.time.strftime(flight_time, '%H:%M')
         return True, ''

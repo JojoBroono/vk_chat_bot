@@ -142,9 +142,8 @@ class Bot:
         text_to_send = next_step['text']
         correct_input, msg = handler(text=text, context=state.context)
         if correct_input:
-            if next_step['next_step']:
-                state.step_name = step['next_step']
-            else:
+            state.step_name = step['next_step']
+            if not next_step['next_step']:
                 state.delete()
         else:
             if not msg:
