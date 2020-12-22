@@ -35,7 +35,7 @@ def config_logging():
 
 class Bot:
     """
-    echo bot для vk.com
+    bot для vk.com
 
     Use Python 3.7
     """
@@ -72,7 +72,11 @@ class Bot:
         context['last_name'] = response[0]['last_name']
         context['photo_url'] = response[0]['photo_100']
 
-    def send_img(self, user_id, image):
+    def send_img(self, user_id, context):
+        im = ImageMaker('external_data/template.png')
+        self.get_photo_and_name(user_id, context)
+        image = im.draw_postcard(context)
+
         upload_url = self.api.photos.getMessagesUploadServer()['upload_url']
         response = requests.post(url=upload_url, files={"photo": ('template.png', image, 'image/png')})
 
@@ -94,54 +98,44 @@ class Bot:
         """
 
         if event.type != VkBotEventType.MESSAGE_NEW:
-            # log.debug(f"Не умею обрабатывать данный тип события {event.type}")
             return
-        text_to_send = DEFAULT_ANSWER
         user_id = event.message.from_id
         text = event.message.text
         state = UserState.get(user_id=str(user_id))
-        if text == '/ticket':
-            if state is not None:
-                state.delete()
-            text_to_send = self.start_scenario(user_id, "ticket")
-            self.send_msg(user_id=user_id, msg=text_to_send)
-            return
-        if text == '/help':
-            self.send_msg(user_id=user_id, msg=HELP_ANSWER)
-            if state is not None:
-                state.delete()
-            return
+
+        if text in ['/ticket', '/help'] and state is not None:
+            state.delete()
+            state = None
         if state is not None:
-            text_to_send = self.continue_scenario(state=state, text=text)
+            self.continue_scenario(user_id=user_id, state=state, text=text)
         else:
             for intent in INTENTS:
                 if text in intent["tokens"]:
                     if intent["scenario"]:
-                        text_to_send = self.start_scenario(user_id, intent["scenario"])
+                        self.start_scenario(user_id, intent["scenario"])
+                        return
                     else:
-                        text_to_send = intent["answer"]
-        step = SCENARIOS[state.scenario_name]['steps'][state.step_name]
-        if "image" in step:
-            im = ImageMaker('external_data/template.png')
-            self.get_photo_and_name(user_id, state.context)
-            postcard = im.draw_postcard(state.context)
-            self.send_img(user_id=user_id, image=postcard)
-        self.send_msg(user_id=event.message.from_id, msg=text_to_send)
+                        self.send_msg(user_id=user_id, msg=intent["answer"])
+                        return
+            self.send_msg(user_id=user_id, msg=DEFAULT_ANSWER)
 
     def start_scenario(self, user_id, scenario_name):
         first_step_name = SCENARIOS[scenario_name]["first_step"]
-        text_to_send = SCENARIOS[scenario_name]["steps"][first_step_name]['text']
+        self.send_msg(user_id=user_id, msg=SCENARIOS[scenario_name]["steps"][first_step_name]['text'])
         UserState(user_id=str(user_id), scenario_name=scenario_name, step_name=first_step_name, context={})
-        return text_to_send
 
-    def continue_scenario(self, state, text):
+    def continue_scenario(self, user_id, state, text):
         steps = SCENARIOS[state.scenario_name]['steps']
         step = steps[state.step_name]
         handler = getattr(handlers, step['handler'])
         next_step = steps[step['next_step']]
-        text_to_send = next_step['text']
         correct_input, msg = handler(text=text, context=state.context)
+
         if correct_input:
+            if state is not None and "image" in next_step:
+                self.send_img(user_id=user_id, context=state.context)
+            self.send_msg(user_id=user_id, msg=next_step['text'].format(**state.context))
+
             state.step_name = step['next_step']
             if not next_step['next_step']:
                 state.delete()
@@ -159,7 +153,7 @@ class Bot:
                 text_to_send = 'Одобрено'
             else:
                 text_to_send = msg
-        return text_to_send.format(**state.context)
+            self.send_msg(user_id=user_id, msg=text_to_send)
 
 
 if __name__ == '__main__':

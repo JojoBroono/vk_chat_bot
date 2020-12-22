@@ -1,11 +1,15 @@
-from pprint import pprint
-from unittest import TestCase
-from bot import Bot
-from unittest.mock import patch, Mock, ANY
-from vk_api.bot_longpoll import VkBotMessageEvent
-from datetime import datetime, timedelta, time
-from settings import SCENARIOS, FLIGHTS
 from copy import deepcopy
+from datetime import timedelta, date
+from unittest import TestCase
+from unittest.mock import patch, Mock
+
+from pony.orm import db_session, rollback
+from vk_api.bot_longpoll import VkBotMessageEvent
+
+from bot import Bot
+from models import UserState
+from settings import SCENARIOS
+from image_maker import ImageMaker
 
 RAW = {'type': 'message_new', 'object': {
     'message': {'date': 1603838534, 'from_id': 423771201, 'id': 160, 'out': 0, 'peer_id': 423771201, 'text': 'Привет',
@@ -14,6 +18,15 @@ RAW = {'type': 'message_new', 'object': {
     'client_info': {'button_actions': ['text', 'vkpay', 'open_app', 'location', 'open_link', 'open_photo', 'callback'],
                     'keyboard': True, 'inline_keyboard': True, 'carousel': True, 'lang_id': 0}}, 'group_id': 199485380,
        'event_id': '1874d0405988d6ebdfcf1950f01e9d1c2221e902'}
+
+
+def my_transaction(func):
+    def wrapper(*args, **kwargs):
+        with db_session:
+            func(*args, **kwargs)
+        rollback()
+
+    return wrapper
 
 
 class TestNormal(TestCase):
@@ -34,11 +47,13 @@ class TestNormal(TestCase):
                 bot.on_event.assert_any_call({})
                 assert bot.on_event.call_count == call_count
 
+    tomorrow = date.strftime(date.today() + timedelta(days=1), '%d-%m-%Y')
+
     INPUTS = [
         '/ticket',
         'Москва',
         'Сыктывкар',
-        '30-01-2021',
+        tomorrow,
         '1',
         '1',
         'БАБАБУЙ',
@@ -62,12 +77,14 @@ class TestNormal(TestCase):
 
     ]
 
+    @my_transaction
     def test_normal(self):
         events = []
         long_poller_listen_mock = Mock()
         long_poller_listen_mock.listen = Mock(return_value=events)
 
         send_mock = Mock()
+        send_img_mock = Mock()
         user_id = RAW['object']['message']['from_id']
         for text in self.INPUTS:
             raw_cpy = deepcopy(RAW)
@@ -80,13 +97,18 @@ class TestNormal(TestCase):
                 bot = Bot('', '')
                 self.context = {}
                 bot.send_msg = send_mock
+                bot.send_img = send_img_mock
+                bot.get_photo_and_name = Mock()
                 for event in bot.long_poll.listen():
                     try:
                         bot.on_event(event)
-                        self.context.update(bot.user_states[user_id].context)
+
+                        state = UserState.get(user_id=str(user_id))
+                        self.context.update(state.context)
                     except Exception as exc:
                         print(exc)
 
+        assert send_mock.call_count == len(self.INPUTS)
         expected_outputs_formatted = []
 
         for st in self.EXPECTED_OUTPUTS:
@@ -95,10 +117,12 @@ class TestNormal(TestCase):
         for call in send_mock.call_args_list:
             args, kwargs = call
             real_outputs.append(kwargs['msg'])
+
         assert real_outputs == expected_outputs_formatted
 
 
 class TestNonlinear(TestCase):
+    tomorrow = date.strftime(date.today() + timedelta(days=1), '%d-%m-%Y')
     INPUTS = [
         '/ticket',
         'Казань',
@@ -106,7 +130,7 @@ class TestNonlinear(TestCase):
         '/ticket',
         'Москва',
         'Сыктывкар',
-        '30-01-2021',
+        tomorrow,
         '1',
         '1',
         'БАБАБУЙ',
@@ -129,6 +153,7 @@ class TestNonlinear(TestCase):
         steps['step1']['text']
     ]
 
+    @my_transaction
     def test_nonlinear(self):
         events = []
         long_poller_listen_mock = Mock()
@@ -150,7 +175,8 @@ class TestNonlinear(TestCase):
                 for event in bot.long_poll.listen():
                     try:
                         bot.on_event(event)
-                        self.context.update(bot.user_states[user_id].context)
+                        state = UserState.get(user_id=str(user_id))
+                        self.context.update(state.context)
                     except Exception as exc:
                         print(exc)
 

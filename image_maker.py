@@ -4,8 +4,8 @@ import io
 
 
 CONTEXT = {
-    "first_name": "БИба",
-    "last_name": "Боба",
+    "first_name": "Имя",
+    "last_name": "Фамилия",
     "date": "2007-11-01",
     "flight_time": "15:30",
     "flight_number": "AA11",
@@ -30,7 +30,6 @@ class ImageMaker:
         d.text((200, 385), context["date"] + ' ' + context["flight_time"], fill="black", anchor="ls", font=font)
 
         photo = Image.open(io.BytesIO(requests.get(context["photo_url"]).content))
-
         self.image.paste(im=photo, box=(20, 20, 120, 120))
 
         temp_file = io.BytesIO()
